@@ -1,7 +1,177 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'chat_page.dart';
 import 'invoice_page.dart';
 import 'guru_service.dart';
+
+class _VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+
+  const _VideoPlayerWidget({required this.videoUrl});
+
+  @override
+  State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    // Check if it's an asset or network URL
+    if (widget.videoUrl.startsWith('assets/') || !widget.videoUrl.startsWith('http')) {
+      _controller = VideoPlayerController.asset(widget.videoUrl);
+    } else {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    }
+
+    try {
+      await _controller.initialize();
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, color: Colors.grey[400], size: 40),
+            const SizedBox(height: 8),
+            Text(
+              'Gagal memuat video',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF4CAF50)),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: VideoPlayer(_controller),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _controller.seekTo(Duration.zero);
+                    _controller.play();
+                  });
+                },
+                icon: const Icon(Icons.replay, color: Color(0xFF4CAF50)),
+              ),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    if (_controller.value.isPlaying) {
+                      _controller.pause();
+                    } else {
+                      _controller.play();
+                    }
+                  });
+                },
+                icon: Icon(
+                  _controller.value.isPlaying ? Icons.pause_circle : Icons.play_circle,
+                  color: const Color(0xFF4CAF50),
+                  size: 40,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoNotAvailableWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.videocam_off_outlined,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Video Not Available',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[500],
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class GuruViewProfilePage extends StatefulWidget {
   final String? name;
@@ -979,6 +1149,9 @@ class _GuruViewProfilePageState extends State<GuruViewProfilePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Video Portofolio
+          _buildVideoSection(),
+          const SizedBox(height: 12),
           // Yang Disukai Murid
           _buildSectionCard(
             title: 'Yang disukai murid',
@@ -1140,6 +1313,65 @@ class _GuruViewProfilePageState extends State<GuruViewProfilePage>
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoSection() {
+    // Check if video URL is available
+    final hasVideo = _guruVideoUrl.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.video_library_outlined,
+                    color: Color(0xFF4CAF50),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Video Portofolio',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasVideo)
+            _VideoPlayerWidget(videoUrl: _guruVideoUrl)
+          else
+            _VideoNotAvailableWidget()
+          ,
+          const SizedBox(height: 16),
         ],
       ),
     );
