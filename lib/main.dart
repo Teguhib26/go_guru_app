@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
+import 'login_popup.dart';
 import 'daftar_murid_page.dart';
 import 'daftar_guru_page.dart';
 import 'guru_list_page.dart';
@@ -59,6 +60,8 @@ class GoGuruApp extends StatelessWidget {
             instrument: args?['instrument'] ?? '',
           );
         },
+        '/daftar-murid': (context) => const DaftarMuridPage(),
+        '/daftar-guru': (context) => const DaftarGuruPage(),
       },
     );
   }
@@ -79,6 +82,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _startAutoScroll();
+    _showLoginPopup();
+  }
+
+  void _showLoginPopup() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      LoginPopup.show(context);
+    });
   }
 
   void _startAutoScroll() {
