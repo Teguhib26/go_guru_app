@@ -292,17 +292,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
                   child: Column(
