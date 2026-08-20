@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'service_locator.dart';
+import 'services/api_service.dart';
 
 class LoginPopup extends StatefulWidget {
   const LoginPopup({super.key});
@@ -573,26 +575,57 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
 
     setState(() => _isLoading = true);
 
-    // Simulate login
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.type == 'murid'
-                ? 'Login sebagai Murid berhasil!'
-                : 'Login sebagai Guru berhasil!',
-          ),
-          backgroundColor: const Color(0xFF4CAF50),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(16),
-        ),
+    try {
+      await sl.authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.type == 'murid'
+                  ? 'Login sebagai Murid berhasil!'
+                  : 'Login sebagai Guru berhasil!',
+            ),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Terjadi kesalahan. Silakan coba lagi.'),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -616,17 +649,6 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              height: 6,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                gradient: LinearGradient(
-                  colors: [widget.color, widget.color.withValues(alpha: 0.7)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
               child: Column(

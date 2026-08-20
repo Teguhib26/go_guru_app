@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:device_preview/device_preview.dart';
+import 'service_locator.dart';
 import 'login_popup.dart';
 import 'daftar_murid_page.dart';
 import 'daftar_guru_page.dart';
@@ -18,9 +19,10 @@ import 'ai_konsultan_page.dart';
 import 'verifikasi_page.dart';
 import 'verifikasi_tunggu_page.dart';
 import 'home_guru_page.dart';
-import 'invoice_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await sl.init();
   runApp(
     DevicePreview(
       builder: (context) => const GoGuruApp(),
@@ -86,6 +88,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showLoginPopup() {
+    // Jangan tampilkan popup jika user sudah login
+    if (sl.isLoggedIn) return;
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       LoginPopup.show(context);
@@ -188,7 +193,7 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 13,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
               ),
             ),
@@ -208,7 +213,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBannerSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Column(
         children: [
           // Carousel

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'service_locator.dart';
+import 'services/api_service.dart';
 import '../widgets/syarat_ketentuan_dialog.dart';
-import 'guru_service.dart';
 
 class DaftarGuruPage extends StatefulWidget {
   const DaftarGuruPage({super.key});
@@ -17,6 +18,7 @@ class _DaftarGuruPageState extends State<DaftarGuruPage> {
   final _confirmPasswordController = TextEditingController();
   String? _selectedInstrument;
   String? _selectedTahun;
+  bool _isLoading = false;
 
   final List<String> _instruments = [
     'Gitar',
@@ -247,7 +249,7 @@ class _DaftarGuruPageState extends State<DaftarGuruPage> {
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: _handleDaftar,
+                      onPressed: _isLoading ? null : _handleDaftar,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFE8F5E9),
                         foregroundColor: const Color(0xFF4CAF50),
@@ -256,13 +258,22 @@ class _DaftarGuruPageState extends State<DaftarGuruPage> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Daftar',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0xFF4CAF50),
+                              ),
+                            )
+                          : const Text(
+                              'Daftar',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -660,33 +671,112 @@ class _DaftarGuruPageState extends State<DaftarGuruPage> {
     );
   }
 
-  void _handleDaftar() {
-    if (_namaController.text.isEmpty || _selectedInstrument == null) {
+  void _handleDaftar() async {
+    if (_namaController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _selectedInstrument == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lengkapi data terlebih dahulu'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Lengkapi data terlebih dahulu'),
+          backgroundColor: Colors.red[400],
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    // Register guru
-    GuruService().registerGuru(
-      name: _namaController.text,
-      instrument: _selectedInstrument!,
-      experience: _selectedTahun ?? '0 Tahun',
-    );
+    if (_passwordController.text.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Password minimal 8 karakter'),
+          backgroundColor: Colors.red[400],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    // Navigate to verifikasi tunggu page with guru data
-    Navigator.pushReplacementNamed(
-      context,
-      '/verifikasi-tunggu',
-      arguments: {
-        'guruName': _namaController.text,
-        'instrument': _selectedInstrument,
-      },
-    );
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Password dan konfirmasi password tidak sama'),
+          backgroundColor: Colors.red[400],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Parse tahun experience
+    int? tahunExperience;
+    if (_selectedTahun != null) {
+      final tahun = _selectedTahun!.replaceAll(RegExp(r'[^0-9]'), '');
+      tahunExperience = int.tryParse(tahun);
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await sl.authService.registerSimple(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
+        fullName: _namaController.text.trim(),
+        role: 'teacher',
+        phoneNumber: _usernameController.text.trim().isNotEmpty
+            ? _usernameController.text.trim()
+            : null,
+        instrument: _selectedInstrument,
+        yearExperience: tahunExperience,
+      );
+
+      // Simpan tahun experience ke storage (karena registerSimple tidak mengirim ini)
+      // Ini bisa diupdate nanti jika API mendukung
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Pendaftaran berhasil!'),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Navigate to verifikasi tunggu page
+        Navigator.pushReplacementNamed(
+          context,
+          '/verifikasi-tunggu',
+          arguments: {
+            'guruName': _namaController.text,
+            'instrument': _selectedInstrument,
+          },
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Terjadi kesalahan. Silakan coba lagi.'),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'service_locator.dart';
+import 'services/api_service.dart';
 import '../widgets/syarat_ketentuan_dialog.dart';
 
 class DaftarMuridPage extends StatefulWidget {
@@ -17,6 +19,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -251,7 +254,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: _handleSignUp,
+                onPressed: _isLoading ? null : _handleSignUp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE8F5E9),
                   foregroundColor: const Color(0xFF4CAF50),
@@ -260,13 +263,22 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Sign up',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Color(0xFF4CAF50),
+                        ),
+                      )
+                    : const Text(
+                        'Sign up',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -453,15 +465,73 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
     );
   }
 
-  void _handleSignUp() {
+  void _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
-      // Handle sign up logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pendaftaran berhasil!'),
-          backgroundColor: Colors.white,
-        ),
-      );
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Password dan konfirmasi password tidak sama'),
+            backgroundColor: Colors.red[400],
+          ),
+        );
+        return;
+      }
+
+      if (_passwordController.text.length < 8) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Password minimal 8 karakter'),
+            backgroundColor: Colors.red[400],
+          ),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      try {
+        await sl.authService.registerSimple(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          confirmPassword: _confirmPasswordController.text,
+          fullName: _usernameController.text.trim(),
+          role: 'student',
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Pendaftaran berhasil! Silakan login.'),
+              backgroundColor: const Color(0xFF4CAF50),
+            ),
+          );
+
+          // Navigate back to login
+          Navigator.of(context).pop();
+        }
+      } on ApiException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message),
+              backgroundColor: Colors.red[400],
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Terjadi kesalahan. Silakan coba lagi.'),
+              backgroundColor: Colors.red[400],
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 }
