@@ -55,18 +55,33 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
     if (mounted) Navigator.of(context).pop();
   }
 
-  void _navigateToRegistration(String type) async {
+  void _showLoginForm(String type) async {
     await _controller.reverse();
     if (mounted) {
       Navigator.of(context).pop();
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 150));
       if (mounted) {
-        Navigator.pushNamed(
-          context,
-          type == 'murid' ? '/daftar-murid' : '/daftar-guru',
-        );
+        _showLoginFormDialog(context, type);
       }
     }
+  }
+
+  void _showLoginFormDialog(BuildContext context, String type) {
+    final isMurid = type == 'murid';
+    final title = isMurid ? 'Masuk sebagai Murid' : 'Masuk sebagai Guru';
+    final icon = isMurid ? Icons.school_rounded : Icons.person_pin_rounded;
+    final color = isMurid ? const Color(0xFF4CAF50) : const Color(0xFF388E3C);
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (dialogContext) => _LoginFormDialog(
+        title: title,
+        icon: icon,
+        color: color,
+        type: type,
+      ),
+    );
   }
 
   void _showRegistrationOptions() async {
@@ -78,6 +93,14 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
         _showRegistrationDialog(context);
       }
     }
+  }
+
+  void _navigateToRegistration(String type) {
+    Navigator.pop(context);
+    Navigator.pushNamed(
+      context,
+      type == 'murid' ? '/daftar-murid' : '/daftar-guru',
+    );
   }
 
   void _showRegistrationDialog(BuildContext context) {
@@ -102,7 +125,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header illustration
               Container(
                 width: 80,
                 height: 80,
@@ -124,8 +146,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Title
               const Text(
                 'Pilih Tipe Akun',
                 style: TextStyle(
@@ -136,8 +156,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Subtitle
               Text(
                 'Daftar sebagai murid atau guru\nuntuk memulai perjalanan musikmu',
                 textAlign: TextAlign.center,
@@ -148,36 +166,24 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 ),
               ),
               const SizedBox(height: 28),
-
-              // Murid button
               _buildRegistrationButton(
                 context: dialogContext,
                 icon: Icons.school_rounded,
                 title: 'Daftar sebagai Murid',
                 subtitle: 'Temukan guru terbaik untukmu',
                 color: const Color(0xFF4CAF50),
-                onTap: () {
-                  Navigator.pop(dialogContext);
-                  _navigateToRegistration('murid');
-                },
+                onTap: () => _navigateToRegistration('murid'),
               ),
               const SizedBox(height: 12),
-
-              // Guru button
               _buildRegistrationButton(
                 context: dialogContext,
                 icon: Icons.music_note_rounded,
                 title: 'Daftar sebagai Guru',
                 subtitle: 'Bagikan kemampuanmu',
                 color: const Color(0xFF388E3C),
-                onTap: () {
-                  Navigator.pop(dialogContext);
-                  _navigateToRegistration('guru');
-                },
+                onTap: () => _navigateToRegistration('guru'),
               ),
               const SizedBox(height: 16),
-
-              // Cancel
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
                 child: Text(
@@ -224,11 +230,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -240,7 +242,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: color.withValues(alpha: 0.9),
+                      color: color,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -290,7 +292,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top gradient accent
                 Container(
                   height: 6,
                   decoration: const BoxDecoration(
@@ -302,21 +303,16 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                     ),
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
                   child: Column(
                     children: [
-                      // Avatar / Icon
                       Container(
                         width: 90,
                         height: 90,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFFE8F5E9),
-                              const Color(0xFFC8E6C9),
-                            ],
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -336,8 +332,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Title
                       const Text(
                         'Selamat Datang!',
                         style: TextStyle(
@@ -348,10 +342,8 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                         ),
                       ),
                       const SizedBox(height: 8),
-
-                      // Subtitle
                       Text(
-                        'Masuk sebagai Murid atau Guru\nuntuk melanjutkan',
+                        'Masuk atau daftar untuk\nmelanjutkan perjalananmusikmu',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -367,7 +359,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                         title: 'Masuk sebagai Murid',
                         subtitle: 'Saya ingin belajar musik',
                         color: const Color(0xFF4CAF50),
-                        onTap: () => _navigateToRegistration('murid'),
+                        onTap: () => _showLoginForm('murid'),
                       ),
                       const SizedBox(height: 14),
 
@@ -377,35 +369,22 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                         title: 'Masuk sebagai Guru',
                         subtitle: 'Saya ingin mengajar',
                         color: const Color(0xFF388E3C),
-                        onTap: () => _navigateToRegistration('guru'),
+                        onTap: () => _showLoginForm('guru'),
                       ),
                       const SizedBox(height: 24),
 
-                      // Divider with text
+                      // Divider
                       Row(
                         children: [
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.grey[200],
-                            ),
-                          ),
+                          Expanded(child: Container(height: 1, color: Colors.grey[200])),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'atau',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[400],
-                              ),
+                              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                             ),
                           ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.grey[200],
-                            ),
-                          ),
+                          Expanded(child: Container(height: 1, color: Colors.grey[200])),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -442,10 +421,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.08),
@@ -463,11 +439,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
+              child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -486,10 +458,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -501,11 +470,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.arrow_forward_rounded,
-                size: 18,
-                color: color,
-              ),
+              child: Icon(Icons.arrow_forward_rounded, size: 18, color: color),
             ),
           ],
         ),
@@ -538,11 +503,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_add_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            Icon(Icons.person_add_rounded, color: Colors.white, size: 20),
             SizedBox(width: 8),
             Text(
               'Daftar Akun Baru',
@@ -571,6 +532,283 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
             color: Colors.grey[400],
             fontWeight: FontWeight.w500,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LoginFormDialog extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final String type;
+
+  const _LoginFormDialog({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.type,
+  });
+
+  @override
+  State<_LoginFormDialog> createState() => _LoginFormDialogState();
+}
+
+class _LoginFormDialogState extends State<_LoginFormDialog> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Email dan password harus diisi'),
+          backgroundColor: Colors.red[400],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Simulate login
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.type == 'murid'
+                ? 'Login sebagai Murid berhasil!'
+                : 'Login sebagai Guru berhasil!',
+          ),
+          backgroundColor: const Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 40,
+              offset: const Offset(0, 15),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                gradient: LinearGradient(
+                  colors: [widget.color, widget.color.withValues(alpha: 0.7)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
+              child: Column(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: widget.color.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(widget.icon, size: 36, color: widget.color),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: widget.color,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Masukkan email dan password\nyang telah terdaftar',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Email field
+                  _buildTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password field
+                  _buildTextField(
+                    controller: _passwordController,
+                    label: 'Password',
+                    icon: Icons.lock_outlined,
+                    obscureText: _obscurePassword,
+                    suffixIcon: GestureDetector(
+                      onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                      child: Icon(
+                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: Colors.grey[400],
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        'Lupa password?',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: widget.color,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Login button
+                  GestureDetector(
+                    onTap: _isLoading ? null : _handleLogin,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [widget.color, widget.color.withValues(alpha: 0.8)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.color.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.login_rounded, color: Colors.white, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Masuk',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Cancel button
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'Batal',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    Widget? suffixIcon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
+          prefixIcon: Icon(icon, size: 20, color: widget.color.withValues(alpha: 0.7)),
+          suffixIcon: suffixIcon,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
