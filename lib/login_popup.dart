@@ -58,13 +58,18 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
   }
 
   void _showLoginForm(String type) async {
+    // Store context before async gap
+    final overlayContext = context;
+
     await _controller.reverse();
     if (mounted) {
-      Navigator.of(context).pop();
-      await Future.delayed(const Duration(milliseconds: 150));
-      if (mounted) {
-        _showLoginFormDialog(context, type);
-      }
+      Navigator.of(overlayContext).pop();
+    }
+
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    if (mounted) {
+      _showLoginFormDialog(overlayContext, type);
     }
   }
 
@@ -87,13 +92,18 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
   }
 
   void _showRegistrationOptions() async {
+    // Store context before async gap
+    final popupContext = context;
+
     await _controller.reverse();
     if (mounted) {
-      Navigator.of(context).pop();
-      await Future.delayed(const Duration(milliseconds: 150));
-      if (mounted) {
-        _showRegistrationDialog(context);
-      }
+      Navigator.of(popupContext).pop();
+    }
+
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    if (mounted) {
+      _showRegistrationDialog(popupContext);
     }
   }
 
@@ -174,7 +184,10 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 title: 'Daftar sebagai Murid',
                 subtitle: 'Temukan guru terbaik untukmu',
                 color: const Color(0xFF4CAF50),
-                onTap: () => _navigateToRegistration('murid'),
+                onTap: () {
+                  Navigator.pop(dialogContext);
+                  _navigateToRegistration('murid');
+                },
               ),
               const SizedBox(height: 12),
               _buildRegistrationButton(
@@ -183,7 +196,10 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                 title: 'Daftar sebagai Guru',
                 subtitle: 'Bagikan kemampuanmu',
                 color: const Color(0xFF388E3C),
-                onTap: () => _navigateToRegistration('guru'),
+                onTap: () {
+                  Navigator.pop(dialogContext);
+                  _navigateToRegistration('guru');
+                },
               ),
               const SizedBox(height: 16),
               TextButton(
@@ -334,7 +350,7 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Masuk atau daftar untuk\nmelanjutkan perjalananmusikmu',
+                        'Masuk atau daftar untuk\nmelanjutkan perjalanan musikmu',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -551,6 +567,7 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -561,19 +578,16 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
 
   void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Email dan password harus diisi'),
-          backgroundColor: Colors.red[400],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
+      setState(() {
+        _errorMessage = 'Email dan password harus diisi';
+      });
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       await sl.authService.login(
@@ -600,27 +614,15 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
       }
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red[400],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
+        setState(() {
+          _errorMessage = e.message;
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Terjadi kesalahan. Silakan coba lagi.'),
-            backgroundColor: Colors.red[400],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
+        setState(() {
+          _errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+        });
       }
     } finally {
       if (mounted) {
@@ -681,29 +683,83 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
+
+                  // Error message
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red[400], size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Email field
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Email',
-                    icon: Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                        prefixIcon: Icon(Icons.email_outlined, size: 20, color: widget.color.withValues(alpha: 0.7)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Password field
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: 'Password',
-                    icon: Icons.lock_outlined,
-                    obscureText: _obscurePassword,
-                    suffixIcon: GestureDetector(
-                      onTap: () => setState(() => _obscurePassword = !_obscurePassword),
-                      child: Icon(
-                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: Colors.grey[400],
-                        size: 20,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                        prefixIcon: Icon(Icons.lock_outlined, size: 20, color: widget.color.withValues(alpha: 0.7)),
+                        suffixIcon: GestureDetector(
+                          onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                          child: Icon(
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: Colors.grey[400],
+                            size: 20,
+                          ),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                     ),
                   ),
@@ -789,37 +845,6 @@ class _LoginFormDialogState extends State<_LoginFormDialog> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-    TextInputType? keyboardType,
-    Widget? suffixIcon,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
-          prefixIcon: Icon(icon, size: 20, color: widget.color.withValues(alpha: 0.7)),
-          suffixIcon: suffixIcon,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
