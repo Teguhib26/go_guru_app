@@ -472,6 +472,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
           SnackBar(
             content: const Text('Email harus diisi'),
             backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -482,6 +483,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
           SnackBar(
             content: const Text('Nama lengkap harus diisi'),
             backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -492,6 +494,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
           SnackBar(
             content: const Text('Password dan konfirmasi password tidak sama'),
             backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -502,6 +505,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
           SnackBar(
             content: const Text('Password minimal 8 karakter'),
             backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
           ),
         );
         return;
@@ -511,7 +515,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
 
       try {
         // Register dan auto-login
-        await sl.authService.registerSimple(
+        final user = await sl.authService.registerSimple(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
@@ -519,33 +523,39 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
           role: 'student',
         );
 
+        print('Registration successful for user: ${user.fullName}');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Pendaftaran berhasil!'),
+              content: Text('Pendaftaran berhasil! Selamat datang, ${user.fullName}!'),
               backgroundColor: const Color(0xFF4CAF50),
+              behavior: SnackBarBehavior.floating,
             ),
           );
 
-          // Tutup halaman daftar dan popup login
-          Navigator.of(context).pop();
-          Navigator.of(context).pop();
+          // Tutup halaman daftar dan popup login (jika ada)
+          Navigator.of(context).popUntil((route) => route.isFirst);
         }
       } on ApiException catch (e) {
+        print('Registration failed: ${e.message}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(e.message),
               backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
       } catch (e) {
+        print('Registration error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Terjadi kesalahan. Silakan coba lagi.'),
+              content: Text('Terjadi kesalahan: ${e.toString()}'),
               backgroundColor: Colors.red[400],
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }

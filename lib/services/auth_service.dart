@@ -123,7 +123,7 @@ class AuthService {
     }
   }
 
-  /// Register simple (tanpa file upload) - langsung login setelah register
+  /// Register simple (tanpa file upload)
   Future<User> registerSimple({
     required String email,
     required String password,
@@ -152,24 +152,67 @@ class AuthService {
       body['year_experience'] = yearExperience;
     }
 
+    print('Registering with body: $body');
+
     // Register ke API
-    await _apiService.post('/auth/register', body: body);
+    final registerResponse = await _apiService.post('/auth/register', body: body);
 
-    // Langsung login setelah register berhasil
-    final loginResponse = await login(email: email, password: password);
+    print('Register response: $registerResponse');
 
-    // Return user data
+    // Try to extract token from register response (some APIs return token on register)
+    String? accessToken;
+    String? refreshToken;
+
+    if (registerResponse.containsKey('access_token')) {
+      accessToken = registerResponse['access_token']?.toString();
+    }
+    if (registerResponse.containsKey('token')) {
+      accessToken = registerResponse['token']?.toString();
+    }
+    if (registerResponse.containsKey('refresh_token')) {
+      refreshToken = registerResponse['refresh_token']?.toString();
+    }
+
+    // If we got a token from registration, use it directly
+    if (accessToken != null && accessToken.isNotEmpty) {
+      await _storageService.setAccessToken(accessToken);
+      if (refreshToken != null) {
+        await _storageService.setRefreshToken(refreshToken);
+      }
+      _apiService.setAccessToken(accessToken);
+      await _storageService.setUserRole(role);
+      await _storageService.setUserEmail(email);
+      await _storageService.setUserName(fullName);
+      await _storageService.setIsGuest(false);
+
+      // Try to get user data
+      try {
+        final user = await getCurrentUser();
+        await _storageService.setUserId(user.id);
+        return user;
+      } catch (_) {
+        return User(id: '', email: email, fullName: fullName, role: role);
+      }
+    }
+
+    // If no token from registration, try to login
     try {
-      final user = await getCurrentUser();
-      return user;
-    } catch (_) {
-      // Fallback: return user dari login response
-      return User(
-        id: loginResponse.user?.id ?? '',
-        email: email,
-        fullName: fullName,
-        role: role,
-      );
+      final loginResponse = await login(email: email, password: password);
+      try {
+        final user = await getCurrentUser();
+        return user;
+      } catch (_) {
+        return User(
+          id: loginResponse.user?.id ?? '',
+          email: email,
+          fullName: fullName,
+          role: role,
+        );
+      }
+    } catch (e) {
+      // If login fails, still return success since registration succeeded
+      print('Auto-login failed but registration succeeded: $e');
+      return User(id: '', email: email, fullName: fullName, role: role);
     }
   }
 
