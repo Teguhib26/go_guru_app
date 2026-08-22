@@ -52,59 +52,38 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _dismiss() async {
-    await _controller.reverse();
-    if (mounted) Navigator.of(context).pop();
+  void _dismiss() {
+    Navigator.of(context).pop();
   }
 
-  void _showLoginForm(String type) async {
-    // Store context before async gap
-    final overlayContext = context;
-
-    await _controller.reverse();
-    if (mounted) {
-      Navigator.of(overlayContext).pop();
-    }
-
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    if (mounted) {
-      _showLoginFormDialog(overlayContext, type);
-    }
-  }
-
-  void _showLoginFormDialog(BuildContext context, String type) {
+  void _showLoginForm(String type) {
     final isMurid = type == 'murid';
     final title = isMurid ? 'Masuk sebagai Murid' : 'Masuk sebagai Guru';
     final icon = isMurid ? Icons.school_rounded : Icons.person_pin_rounded;
     final color = isMurid ? const Color(0xFF4CAF50) : const Color(0xFF388E3C);
 
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (dialogContext) => _LoginFormDialog(
-        title: title,
-        icon: icon,
-        color: color,
-        type: type,
-      ),
-    );
+    Navigator.of(context).pop();
+
+    Future.delayed(const Duration(milliseconds: 100), () {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.5),
+        builder: (dialogContext) => _LoginFormDialog(
+          title: title,
+          icon: icon,
+          color: color,
+          type: type,
+        ),
+      );
+    });
   }
 
-  void _showRegistrationOptions() async {
-    // Store context before async gap
-    final popupContext = context;
+  void _showRegistrationOptions() {
+    Navigator.of(context).pop();
 
-    await _controller.reverse();
-    if (mounted) {
-      Navigator.of(popupContext).pop();
-    }
-
-    await Future.delayed(const Duration(milliseconds: 200));
-
-    if (mounted) {
-      _showRegistrationDialog(popupContext);
-    }
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _showRegistrationDialog(context);
+    });
   }
 
   void _navigateToRegistration(String type) {
@@ -115,9 +94,9 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
     );
   }
 
-  void _showRegistrationDialog(BuildContext context) {
+  void _showRegistrationDialog(BuildContext parentContext) {
     showDialog(
-      context: context,
+      context: parentContext,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
@@ -179,7 +158,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 28),
               _buildRegistrationButton(
-                context: dialogContext,
                 icon: Icons.school_rounded,
                 title: 'Daftar sebagai Murid',
                 subtitle: 'Temukan guru terbaik untukmu',
@@ -191,7 +169,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 12),
               _buildRegistrationButton(
-                context: dialogContext,
                 icon: Icons.music_note_rounded,
                 title: 'Daftar sebagai Guru',
                 subtitle: 'Bagikan kemampuanmu',
@@ -220,7 +197,6 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
   }
 
   Widget _buildRegistrationButton({
-    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
