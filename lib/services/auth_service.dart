@@ -31,18 +31,25 @@ class AuthService {
     // Set token ke API service
     _apiService.setAccessToken(loginResponse.accessToken);
 
-    // Ambil data user
-    if (loginResponse.user == null) {
-      try {
-        final userResponse = await getCurrentUser();
-        await _storageService.setUserRole(userResponse.role);
-        await _storageService.setUserEmail(userResponse.email);
-        await _storageService.setUserId(userResponse.id);
-      } catch (_) {}
-    } else {
+    // Ambil data user dari API
+    User? userData;
+    try {
+      userData = await getCurrentUser();
+    } catch (_) {}
+
+    // Simpan data user
+    if (userData != null) {
+      await _storageService.setUserId(userData.id);
+      await _storageService.setUserRole(userData.role);
+      await _storageService.setUserEmail(userData.email);
+      await _storageService.setUserName(userData.fullName);
+      await _storageService.setIsGuest(false);
+    } else if (loginResponse.user != null) {
+      await _storageService.setUserId(loginResponse.user!.id);
       await _storageService.setUserRole(loginResponse.user!.role);
       await _storageService.setUserEmail(loginResponse.user!.email);
-      await _storageService.setUserId(loginResponse.user!.id);
+      await _storageService.setUserName(loginResponse.user!.fullName);
+      await _storageService.setIsGuest(false);
     }
 
     return loginResponse;
@@ -116,8 +123,8 @@ class AuthService {
     }
   }
 
-  /// Register simple (tanpa file upload)
-  Future<Map<String, dynamic>> registerSimple({
+  /// Register simple (tanpa file upload) - langsung login setelah register
+  Future<User> registerSimple({
     required String email,
     required String password,
     required String confirmPassword,
@@ -145,7 +152,25 @@ class AuthService {
       body['year_experience'] = yearExperience;
     }
 
-    return await _apiService.post('/auth/register', body: body);
+    // Register ke API
+    await _apiService.post('/auth/register', body: body);
+
+    // Langsung login setelah register berhasil
+    final loginResponse = await login(email: email, password: password);
+
+    // Return user data
+    try {
+      final user = await getCurrentUser();
+      return user;
+    } catch (_) {
+      // Fallback: return user dari login response
+      return User(
+        id: loginResponse.user?.id ?? '',
+        email: email,
+        fullName: fullName,
+        role: role,
+      );
+    }
   }
 
   /// Ambil data user yang sedang login
@@ -190,9 +215,19 @@ class AuthService {
     }
   }
 
+  /// Set guest mode dengan nama acak
+  Future<void> setGuestMode(String randomName) async {
+    await _storageService.setGuestMode(randomName);
+  }
+
   /// Cek apakah user sudah login
   bool isLoggedIn() {
     return _storageService.isLoggedIn();
+  }
+
+  /// Cek apakah user guest
+  bool isGuest() {
+    return _storageService.isGuest();
   }
 
   /// Inisialisasi session dari stored token
@@ -222,5 +257,10 @@ class AuthService {
   /// Get stored user email
   String? getUserEmail() {
     return _storageService.getUserEmail();
+  }
+
+  /// Get stored user name
+  String? getUserName() {
+    return _storageService.getUserName();
   }
 }

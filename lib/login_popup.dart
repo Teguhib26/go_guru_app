@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'service_locator.dart';
@@ -52,8 +53,28 @@ class _LoginPopupState extends State<LoginPopup> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _dismiss() {
-    Navigator.of(context).pop();
+  void _dismiss() async {
+    // Generate random guest name
+    final guestName = _generateRandomName();
+
+    // Set guest mode
+    await sl.authService.setGuestMode(guestName);
+
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  String _generateRandomName() {
+    final random = Random();
+    final adjectives = ['Musik', 'Melodi', 'Harmoni', 'Ceria', 'Bahagia', 'Kreatif', 'Inspirasional'];
+    final nouns = ['Pembelajar', 'Musisi', 'Penggemar', 'Artis', 'Penikmat', 'Mahasiswa'];
+
+    final adj = adjectives[random.nextInt(adjectives.length)];
+    final noun = nouns[random.nextInt(nouns.length)];
+    final number = random.nextInt(999) + 1;
+
+    return '$adj $noun #$number';
   }
 
   void _showLoginForm(String type) {

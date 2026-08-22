@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'service_locator.dart';
 import 'edit_profil_page.dart';
 import 'notifikasi_page.dart';
 import 'keamanan_page.dart';
@@ -16,17 +17,23 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final Map<String, dynamic> _userData = {
-    'name': 'Teguh',
-    'email': 'ibramasto@gmail.com',
-    'phone': '+62 89694485959',
-    'avatar': 'assets/avatars/avatar1.png',
-    'memberSince': 'Januari 2024',
-    'isVerified': true,
-    'totalLessons': 24,
-    'totalHours': 36,
-    'rating': 4.8,
-  };
+  String _userName = '';
+  String _userEmail = '';
+  bool _isGuest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    setState(() {
+      _userName = sl.authService.getUserName() ?? 'Pengguna';
+      _userEmail = sl.authService.getUserEmail() ?? '';
+      _isGuest = sl.authService.isGuest();
+    });
+  }
 
   final List<Map<String, dynamic>> _settingsMenu = [
     {'icon': Icons.location_on_outlined, 'label': 'Alamat'},
@@ -92,100 +99,190 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
-                width: 2,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.asset(
-                _userData['avatar'],
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
+                    width: 2,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.asset(
+                    'assets/avatars/avatar1.png',
                     width: 72,
                     height: 72,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Color(0xFF4CAF50),
-                      size: 36,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _userData['name'],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                    ),
-                    if (_userData['isVerified']) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 10,
+                          Icons.person,
+                          color: Color(0xFF4CAF50),
+                          size: 36,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _userName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ),
+                        if (!_isGuest) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF4CAF50),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 10,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (!_isGuest && _userEmail.isNotEmpty) ...[
+                      Text(
+                        _userEmail,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ] else if (_isGuest) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Tamu',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _userData['email'],
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfilPage())),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFFBDBDBD),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _userData['phone'],
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfilPage())),
-            icon: const Icon(
-              Icons.chevron_right,
-              color: Color(0xFFBDBDBD),
+          if (_isGuest) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Anda masuk sebagai tamu',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _showLoginPrompt,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Masuk / Daftar Akun',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showLoginPrompt() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Masuk ke Akun'),
+        content: const Text('Silakan masuk atau daftar akun untuk menikmati semua fitur aplikasi.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Nanti'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+            ),
+            child: const Text('Masuk'),
           ),
         ],
       ),
@@ -193,6 +290,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildStatsSection() {
+    if (_isGuest) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -204,7 +305,7 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Expanded(
             child: _buildStatItem(
-              value: '${_userData['totalLessons']}',
+              value: '0',
               label: 'Les',
             ),
           ),
@@ -215,7 +316,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           Expanded(
             child: _buildStatItem(
-              value: '${_userData['totalHours']}',
+              value: '0',
               label: 'Jam',
             ),
           ),
@@ -226,7 +327,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           Expanded(
             child: _buildStatItem(
-              value: '${_userData['rating']}',
+              value: '-',
               label: 'Rating',
             ),
           ),
@@ -332,34 +433,23 @@ class _ProfilePageState extends State<ProfilePage> {
         child: OutlinedButton(
           onPressed: () => _showLogoutDialog(),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFFFF5722),
-            side: const BorderSide(color: Color(0xFFFF5722), width: 1.5),
+            foregroundColor: _isGuest ? const Color(0xFF4CAF50) : const Color(0xFFFF5722),
+            side: BorderSide(
+              color: _isGuest ? const Color(0xFF4CAF50) : const Color(0xFFFF5722),
+              width: 1.5,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
           ),
-          child: const Text(
-            'Keluar',
-            style: TextStyle(
+          child: Text(
+            _isGuest ? 'Keluar dari Mode Tamu' : 'Keluar',
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(String feature) {
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature - Segera hadir!'),
-        backgroundColor: const Color(0xFF4CAF50),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -419,19 +509,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
+                    color: _isGuest ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.logout,
-                    color: Color(0xFFFF5722),
+                  child: Icon(
+                    _isGuest ? Icons.person_off : Icons.logout,
+                    color: _isGuest ? const Color(0xFF4CAF50) : const Color(0xFFFF5722),
                     size: 32,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Keluar dari akun?',
-                  style: TextStyle(
+                Text(
+                  _isGuest ? 'Keluar dari Mode Tamu?' : 'Keluar dari akun?',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1A1A1A),
@@ -439,7 +529,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Anda yakin ingin keluar dari akun ini?',
+                  _isGuest
+                      ? 'Anda akan keluar dari mode tamu. Data tidak akan disimpan.'
+                      : 'Anda yakin ingin keluar dari akun ini?',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -476,19 +568,19 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            _showLogoutSuccess();
+                            _handleLogout();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF5722),
+                            backgroundColor: _isGuest ? const Color(0xFF4CAF50) : const Color(0xFFFF5722),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'Keluar',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          child: Text(
+                            _isGuest ? 'Keluar' : 'Keluar',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -501,6 +593,22 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  void _handleLogout() async {
+    if (_isGuest) {
+      // Guest logout - just clear guest data
+      await sl.authService.logout();
+    } else {
+      // Regular logout
+      await sl.authService.logout();
+    }
+
+    if (mounted) {
+      _showLogoutSuccess();
+      // Navigate back to home
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   void _showLogoutSuccess() {

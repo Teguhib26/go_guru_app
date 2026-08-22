@@ -467,6 +467,26 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
 
   void _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
+      if (_emailController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Email harus diisi'),
+            backgroundColor: Colors.red[400],
+          ),
+        );
+        return;
+      }
+
+      if (_usernameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Nama lengkap harus diisi'),
+            backgroundColor: Colors.red[400],
+          ),
+        );
+        return;
+      }
+
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -490,6 +510,7 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
       setState(() => _isLoading = true);
 
       try {
+        // Register dan auto-login
         await sl.authService.registerSimple(
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -501,12 +522,13 @@ class _DaftarMuridPageState extends State<DaftarMuridPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Pendaftaran berhasil! Silakan login.'),
+              content: const Text('Pendaftaran berhasil!'),
               backgroundColor: const Color(0xFF4CAF50),
             ),
           );
 
-          // Navigate back to login
+          // Tutup halaman daftar dan popup login
+          Navigator.of(context).pop();
           Navigator.of(context).pop();
         }
       } on ApiException catch (e) {
